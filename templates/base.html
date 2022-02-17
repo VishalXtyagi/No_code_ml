@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Required Css Stylesheets -->
+    {% block styles %}
+        <link rel="stylesheet" href="https://releases.transloadit.com/uppy/v2.4.1/uppy.min.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/pixel.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+    {% endblock %}
+
+    <title>{% block title %}{% endblock %}</title>
+</head>
+{% set page_name = page_name|default('home') -%}
+<body class="{{ page_name }}-page">
+
+<main>{% block content %}{% endblock %}</main>
+<div id="footer">{% block footer %}{% endblock %}</div>
+
+<!-- Required Js Scripts -->
+{% block scripts %}
+    <script src="https://releases.transloadit.com/uppy/v2.4.1/uppy.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pixel.js') }}"></script>
+{#    <script src="{{ url_for('static', filename='vendor/headroom.js/dist/headroom.min.js') }}"></script>#}
+{#    <script src="{{ url_for('static', filename='vendor/onscreen/dist/on-screen.umd.min.js') }}"></script>#}
+{#    <script src="{{ url_for('static', filename='vendor/jarallax/dist/jarallax.min.js') }}"></script>#}
+    <script src="{{ url_for('static', filename='vendor/smooth-scroll/dist/smooth-scroll.polyfills.min.js') }}"></script>
+{#    <script src="{{ url_for('static', filename='vendor/vivus/dist/vivus.min.js') }}"></script>#}
+{#    <script src="{{ url_for('static', filename='vendor/vanillajs-datepicker/dist/js/datepicker.min.js') }}"></script>#}
+
+{#    <script async defer src="https://buttons.github.io/buttons.js"></script>#}
+{% endblock %}
+</body>
+</html>

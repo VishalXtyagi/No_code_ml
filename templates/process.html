@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Process file | NoCode ML{% endblock %}
+
+{% block content %}
+    <section class="min-vh-100 d-flex align-items-center section-image overlay-soft-dark"
+             data-background="{{ url_for('static', filename='img/form-image.jpg') }}">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-3 d-flex align-items-center justify-content-center">
+                    {% if df is not none %}
+                        <div class="card shadow w-100 p-3">
+                            <div class="card-body">
+                                <h6 class="mb-3">Select the required columns :</h6>
+                                <div id="df-column" class="form-group">
+                                    {% for i in range(df.columns|length) %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ df.columns[i] }}"
+                                                   id="check-{{ i }}" checked>
+                                            <label class="form-check-label" for="check-{{ i }}">
+                                                {{ df.columns[i] }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                    <label class="pt-3 mb-3 border-top" for="select-col">Select the target variable
+                                        :</label>
+                                    <select class="form-select mb-3" id="select-col" name="index" required>
+                                        <option disabled value="" hidden selected>Choose a option</option>
+                                    </select>
+                                    <label class="pt-3 mb-3 border-top" for="select-model">Select the ML model
+                                        :</label>
+                                    <select class="form-select mb-3" id="select-model" name="ml-model" required>
+                                        <option disabled value="" hidden selected>Choose a option</option>
+                                    </select>
+                                    <div class="pt-3 mb-3 border-top">
+                                        <button id="proceedBtn" class="btn btn-primary w-100">Proceed</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card shadow w-100 py-5 px-3">
+                            <div class="card-body text-center">
+                                <div class="card-text">
+                                    <span class="d-block mb-3">Sorry! Dataframe isn't available</span>
+                                    Please try again later or start again with a different dataset.
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-9 d-flex flex-column align-items-center justify-content-center">
+                    <div class="card shadow w-100 p-3 h-100">
+                        {% if df is not none %}
+                            <div id="placeholder" class="card-body d-flex align-items-center justify-content-center">
+                                <div class="text-center w-75">
+                                    <h6><span class="d-block">Please select the appropriate options</span> click the
+                                        proceed button to start the process
+                                    </h6>
+                                </div>
+
+                            </div>
+
+                            <div id="processing"
+                                 class="d-none card-body d-flex align-items-center justify-content-center">
+                                <div class="text-center w-75">
+                                    <img src="{{ url_for('static', filename='img/processing.gif') }}"/>
+                                    <h6 class="mt-5">
+                                        <span class="d-block">Baking the data takes time, keep patience</span>Please do
+                                        not reload or go back.</h6>
+                                </div>
+
+                            </div>
+
+
+                            <div id="error" class="d-none card-body d-flex align-items-center justify-content-center error-card">
+                                <div class="text-center w-75">
+                                    <h5>Sorry! Something went wrong</h5>
+                                    <p>Please try again later, you can restart the process by using back button
+                                        Otherwise try to upload another dataset.</p>
+                                    <div class="d-flex justify-content-center pt-3">
+                                        <button onclick="deleteFile('{{ fileid }}')"
+                                                class="btn btn-outline-danger me-lg-4" type="button">Delete the
+                                            dataset
+                                        </button>
+                                        <button onclick="startProcess()" class="btn btn-success">Try again</button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                        {% else %}
+                            <div class="card-body d-flex align-items-center justify-content-center error-card">
+                                <div class="text-center w-75">
+                                    <h5>Sorry! Something went wrong</h5>
+                                    <p>Please try again later, you can restart the process by using back button
+                                        Otherwise try to upload another dataset.</p>
+                                    <div class="d-flex justify-content-center pt-3">
+                                        <button onclick="deleteFile('{{ fileid }}')"
+                                                class="btn btn-outline-danger me-lg-4" type="button">Delete the
+                                            dataset
+                                        </button>
+                                        <button onclick="startProcess()" class="btn btn-success">Try again</button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+
+        function deleteFile(fileId) {
+            const uppy = new Uppy.Core();
+            uppy.removeFile(fileId);
+            window.location.replace("{{ url_for('home') }}");
+        }
+
+        function startProcess() {
+            $('.error-card').addClass('d-none');
+            $('#placeholder').addClass('d-none');
+            $('#processing').removeClass('d-none');
+
+            var request = $.ajax({
+                type: 'POST',
+                url: "{{ url_for('process') }}",
+                data: {
+                    'target': $('#select-col').val(),
+                    'model_name': $('#select-model').val()
+                }
+            });
+            request.done(function () {
+                $('#processing').addClass('d-none');
+            }).fail(function () {
+                $('#processing').addClass('d-none');
+                $('#error').removeClass('d-none');
+            });
+
+        }
+
+        function updateModels() {
+            var request = $.ajax({
+                type: 'GET',
+                url: "{{ url_for('get_models') }}",
+            });
+            request.done(function (data) {
+                $.each(data, function (i, item) {
+                    $('#select-model').append($('<option>', {
+                        value: i,
+                        text: item
+                    }));
+                });
+            }).fail(function () {
+                $('#select-model').find('option').remove();
+                $('#select-model').append('<option disabled value="" hidden selected>No Model Found!</option>');
+            });
+        }
+
+        function updateIndexes() {
+            $('#select-col').find('option').not(':first').remove();
+
+            var columnIDs = $("#df-column input:checkbox:checked").map(function () {
+                return $(this).val();
+            }).get();
+
+            $.each(columnIDs, function (i, item) {
+                $('#select-col').append($('<option>', {
+                    value: i,
+                    text: item
+                }));
+            });
+        }
+
+        $(function () {
+            updateModels();
+            updateIndexes();
+            $("#df-column input:checkbox").click(function (event) {
+                updateIndexes();
+            });
+
+
+            $('#proceedBtn').click(function (event) {
+                startProcess();
+            });
+
+        });
+
+    </script>
+{% endblock %}
