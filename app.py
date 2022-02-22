@@ -1,15 +1,18 @@
-from flask import Flask, render_template, request, abort, jsonify, url_for
-from nocode import Nocode, get_plot_image, save_model_to_file, plots_dir, available_models
+import os
+
+from flask import Flask, render_template, request, abort, jsonify, url_for, send_from_directory
+from nocode import Nocode, get_plot_image, available_models, save_model_to_file
 
 app = Flask(__name__)
+app.secret_key = os.urandom(12).hex()
+os.mkdir('static/models')
+os.mkdir('static/plots')
 nocode = None
-df = None
-
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == "POST":
-        global nocode, df
+        global nocode
         fileid = request.form.get('id')
         filename = request.form.get('name')
         fileurl = request.form.get('url')
@@ -24,18 +27,20 @@ def home():
 def process():
     if request.method == "POST":
         target = request.form.get('target')
-        modelname = request.form.get('model_name')
-        print(target, modelname)
-        if target and modelname:
+        model_name = request.form.get('model_name')
+        if target and model_name:
             nocode.reset_index()
             nocode.cleaning_data()
-            mae, mse, rmse = nocode.predict_by_model(target, modelname)
-            # plot_path = get_plot_image('data')
+            model, test_df = nocode.predict_by_model(model_name, nocode.split_data(target), target)
+            mae, mse, rmse = nocode.error_metric(test_df['Actual'], test_df['Prediction'])
+            plot_path = get_plot_image(test_df)
+            model_path = save_model_to_file(model)
             return jsonify({
                 'mae': mae,
                 'mse': mse,
                 'rmse': rmse,
-                # 'plot_link': url_for('static', filename=plot_path)
+                'plot_link': url_for('static', filename=plot_path),
+                'model_link': url_for('static', filename=model_path)
             })
         return jsonify({'message': 'error'}), 500
     abort(404)
@@ -44,6 +49,7 @@ def process():
 @app.route('/get-models')
 def get_models():
     return jsonify(available_models())
+
 
 if __name__ == '__main__':
     app.run()

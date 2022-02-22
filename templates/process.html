@@ -9,7 +9,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-3 d-flex align-items-center justify-content-center">
                     {% if df is not none %}
-                        <div class="card shadow w-100 p-3">
+                        <div class="card shadow w-100 p-3 h-100">
                             <div class="card-body">
                                 <h6 class="mb-3">Select the required columns :</h6>
                                 <div id="df-column" class="form-group">
@@ -22,24 +22,11 @@
                                             </label>
                                         </div>
                                     {% endfor %}
-                                    <label class="pt-3 mb-3 border-top" for="select-col">Select the target variable
-                                        :</label>
-                                    <select class="form-select mb-3" id="select-col" name="index" required>
-                                        <option disabled value="" hidden selected>Choose a option</option>
-                                    </select>
-                                    <label class="pt-3 mb-3 border-top" for="select-model">Select the ML model
-                                        :</label>
-                                    <select class="form-select mb-3" id="select-model" name="ml-model" required>
-                                        <option disabled value="" hidden selected>Choose a option</option>
-                                    </select>
-                                    <div class="pt-3 mb-3 border-top">
-                                        <button id="proceedBtn" class="btn btn-primary w-100">Proceed</button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     {% else %}
-                        <div class="card shadow w-100 py-5 px-3">
+                        <div class="card shadow w-100 py-5 px-3 h-100">
                             <div class="card-body text-center">
                                 <div class="card-text">
                                     <span class="d-block mb-3">Sorry! Dataframe isn't available</span>
@@ -49,7 +36,7 @@
                         </div>
                     {% endif %}
                 </div>
-                <div class="col-lg-9 d-flex flex-column align-items-center justify-content-center">
+                <div class="col-lg-6 d-flex flex-column align-items-center justify-content-center">
                     <div class="card shadow w-100 p-3 h-100">
                         {% if df is not none %}
                             <div id="placeholder" class="card-body d-flex align-items-center justify-content-center">
@@ -83,12 +70,31 @@
                                                 class="btn btn-outline-danger me-lg-4" type="button">Delete the
                                             dataset
                                         </button>
-                                        <button onclick="startProcess()" class="btn btn-success">Try again</button>
+                                        <button onclick="deleteFile('{{ fileid }}')" class="btn btn-success">Try again</button>
                                     </div>
                                 </div>
 
                             </div>
 
+                            <div id="result" class="d-none card-body d-flex align-items-center justify-content-center error-card">
+                                <div class="text-center w-75">
+                                    <h5 class="mb-3">After baking the model, the bread is now ready!</h5>
+                                    <p>MAE: <span id="mae"></span></p>
+                                    <p>MSE: <span id="mse"></span></p>
+                                    <p>RMSE: <span id="rmse"></span></p>
+                                    <div class="w-100 mb-3">
+                                        <img class="img-fluid" id="plot" />
+                                    </div>
+                                    <div class="d-flex justify-content-center pt-3">
+                                        <a id="model-link" href="#"
+                                                class="btn btn-outline-danger me-lg-4" type="button">Download the
+                                            Model
+                                        </a>
+                                        <button onclick="deleteFile('{{ fileid }}')" class="btn btn-success">Try again</button>
+                                    </div>
+                                </div>
+
+                            </div>
 
                         {% else %}
                             <div class="card-body d-flex align-items-center justify-content-center error-card">
@@ -101,7 +107,7 @@
                                                 class="btn btn-outline-danger me-lg-4" type="button">Delete the
                                             dataset
                                         </button>
-                                        <button onclick="startProcess()" class="btn btn-success">Try again</button>
+                                        <button onclick="deleteFile('{{ fileid }}')" class="btn btn-success">Try again</button>
                                     </div>
                                 </div>
 
@@ -109,6 +115,36 @@
 
                         {% endif %}
                     </div>
+                </div>
+                <div class="col-lg-3 d-flex align-items-center justify-content-center">
+                    {% if df is not none %}
+                        <div class="card shadow w-100 p-3 h-100">
+                            <div class="card-body">
+                                <label class="mb-3" for="select-col">Select the target variable
+                                    :</label>
+                                <select class="form-select mb-3" id="select-col" name="index" required>
+                                    <option disabled value="" hidden selected>Choose a option</option>
+                                </select>
+                                <label class="pt-3 mb-3 border-top" for="select-model">Select the ML model
+                                    :</label>
+                                <select class="form-select mb-3" id="select-model" name="ml-model" required>
+                                    <option disabled value="" hidden selected>Choose a option</option>
+                                </select>
+                                <div class="pt-3 mb-3 border-top">
+                                    <button id="proceedBtn" class="btn btn-primary w-100">Proceed</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card shadow w-100 py-5 px-3 h-100">
+                            <div class="card-body text-center">
+                                <div class="card-text">
+                                    <span class="d-block mb-3">Sorry! Dataframe isn't available</span>
+                                    Please try again later or start again with a different dataset.
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -137,13 +173,20 @@
                 data: {
                     'target': $('#select-col').val(),
                     'model_name': $('#select-model').val()
+                },
+                success: function(data){
+                    $('#mae').text(data.mae);
+                    $('#mse').text(data.mse);
+                    $('#rmse').text(data.rmse);
+                    $('#plot').attr('src', data.plot_link);
+                    $('#model-link').attr('href', data.model_link);
+                    $('#processing').addClass('d-none');
+                    $('#result').removeClass('d-none');
+                },
+                error: function(){
+                    $('#processing').addClass('d-none');
+                    $('#error').removeClass('d-none');
                 }
-            });
-            request.done(function () {
-                $('#processing').addClass('d-none');
-            }).fail(function () {
-                $('#processing').addClass('d-none');
-                $('#error').removeClass('d-none');
             });
 
         }
@@ -156,7 +199,7 @@
             request.done(function (data) {
                 $.each(data, function (i, item) {
                     $('#select-model').append($('<option>', {
-                        value: i,
+                        value: item,
                         text: item
                     }));
                 });
@@ -175,7 +218,7 @@
 
             $.each(columnIDs, function (i, item) {
                 $('#select-col').append($('<option>', {
-                    value: i,
+                    value: item,
                     text: item
                 }));
             });
