@@ -167,18 +167,25 @@
             $('#placeholder').addClass('d-none');
             $('#processing').removeClass('d-none');
 
+            var dropColumns = $("#df-column input:checkbox:not(:checked)").map(function () {
+                $(this).prop('disabled', true);
+                return $(this).val();
+            }).get();
+
             var request = $.ajax({
                 type: 'POST',
                 url: "{{ url_for('process') }}",
-                data: {
+                data: JSON.stringify({
+                    'drop_columns': dropColumns,
                     'target': $('#select-col').val(),
                     'model_name': $('#select-model').val()
-                },
+                }),
+                contentType : "application/json",
                 success: function(data){
                     $('#mae').text(data.mae);
                     $('#mse').text(data.mse);
                     $('#rmse').text(data.rmse);
-                    $('#plot').attr('src', data.plot_link);
+                    $('#plot').prop('src', data.plot_link + '?' + Math.random());
                     $('#model-link').attr('href', data.model_link);
                     $('#processing').addClass('d-none');
                     $('#result').removeClass('d-none');
@@ -200,7 +207,7 @@
                 $.each(data, function (i, item) {
                     $('#select-model').append($('<option>', {
                         value: item,
-                        text: item
+                        text: item.split(/(?=[A-Z])/).join(" ")
                     }));
                 });
             }).fail(function () {

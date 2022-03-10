@@ -2,11 +2,16 @@ import os
 
 from flask import Flask, render_template, request, abort, jsonify, url_for, send_from_directory
 from nocode import Nocode, get_plot_image, available_models, save_model_to_file
+import shutil
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12).hex()
-os.mkdir('static/models')
-os.mkdir('static/plots')
+
+for d in ('static/models', 'static/plots'):
+    if os.path.exists(d):
+        shutil.rmtree(d)
+    os.mkdir(d)
+
 nocode = None
 
 @app.route('/', methods=['GET', 'POST'])
@@ -26,8 +31,11 @@ def home():
 @app.route('/process', methods=['GET', 'POST'])
 def process():
     if request.method == "POST":
-        target = request.form.get('target')
-        model_name = request.form.get('model_name')
+        drop_columns = request.json['drop_columns']
+        target = request.json['target']
+        model_name = request.json['model_name']
+        if drop_columns and len(drop_columns) > 0:
+            nocode.drop_cols(drop_columns)
         if target and model_name:
             nocode.reset_index()
             nocode.cleaning_data()
@@ -42,7 +50,7 @@ def process():
                 'plot_link': url_for('static', filename=plot_path),
                 'model_link': url_for('static', filename=model_path)
             })
-        return jsonify({'message': 'error'}), 500
+        return jsonify({'message': 'Please ensure target variable & model name both are selected'}), 500
     abort(404)
 
 

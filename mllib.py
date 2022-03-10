@@ -2,15 +2,23 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split as tts
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 import sklearn as sk
+import xgboost as xg
 import pandas as pd
 
-model_dict = {
-    'linear_reg': LinearRegression()
-}
-
+models = [
+    LinearRegression(),
+    DecisionTreeRegressor(),
+    RandomForestRegressor(),
+    xg.XGBRegressor(objective ='reg:linear', n_estimators = 10, seed = 123),
+    xg.XGBClassifier(n_estimators=10, seed=123)
+]
+model_dict = {x.__class__.__name__: x for x in models}
 
 def get_model(model_name):
+    print(model_dict)
     return model_dict[model_name]
 
 

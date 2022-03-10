@@ -34,6 +34,7 @@ def get_plot_image(df):
     df = df.apply(pd.to_numeric)
     filepath = os.path.join(static_dir, plot_img_path)
     plot = sns.regplot(x="Actual", y="Prediction", data=df)
+    # sns.scatterplot(x="Actual", y="Prediction", data=df)
     fig = plot.get_figure()
     fig.savefig(filepath)
     return plot_img_path
@@ -74,16 +75,23 @@ class Nocode:
             self.dataframe = self.dataframe.apply(lambda x: x.astype(str).str.lower())
         return self.dataframe
 
+    def drop_cols(self, columns):
+        for col in columns:
+            if col in self.dataframe:
+                self.dataframe.drop(col, axis=1, inplace=True)
+        return self.dataframe
+
     def reset_index(self, column=None):
         if column:
             self.dataframe.set_index(column)
         else:
             self.dataframe = self.dataframe.reset_index()
         if 'index' in self.dataframe.columns:
-            self.dataframe = self.dataframe.drop('index', axis=1)
+            self.dataframe.drop('index', axis=1, inplace=True)
         return self.dataframe
 
     def cleaning_data(self):
+        print(self.dataframe)
         self.dataframe = self.dataframe.replace('?', np.NaN)
         for col in self.dataframe.columns:
             null_sum = self.dataframe[col].isnull().sum()
