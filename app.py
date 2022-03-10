@@ -37,19 +37,22 @@ def process():
         if drop_columns and len(drop_columns) > 0:
             nocode.drop_cols(drop_columns)
         if target and model_name:
-            nocode.reset_index()
-            nocode.cleaning_data()
-            model, test_df = nocode.predict_by_model(model_name, nocode.split_data(target), target)
-            mae, mse, rmse = nocode.error_metric(test_df['Actual'], test_df['Prediction'])
-            plot_path = get_plot_image(test_df)
-            model_path = save_model_to_file(model)
-            return jsonify({
-                'mae': mae,
-                'mse': mse,
-                'rmse': rmse,
-                'plot_link': url_for('static', filename=plot_path),
-                'model_link': url_for('static', filename=model_path)
-            })
+            try:
+                nocode.reset_index()
+                nocode.cleaning_data()
+                model, test_df = nocode.predict_by_model(model_name, nocode.split_data(target), target)
+                mae, mse, rmse = nocode.error_metric(test_df['Actual'], test_df['Prediction'])
+                plot_path = get_plot_image(test_df)
+                model_path = save_model_to_file(model)
+                return jsonify({
+                    'mae': mae,
+                    'mse': mse,
+                    'rmse': rmse,
+                    'plot_link': url_for('static', filename=plot_path),
+                    'model_link': url_for('static', filename=model_path)
+                })
+            except Exception as e:
+                return jsonify({'message': str(e)}), 500
         return jsonify({'message': 'Please ensure target variable & model name both are selected'}), 500
     abort(404)
 

@@ -37,6 +37,7 @@ def get_plot_image(df):
     # sns.scatterplot(x="Actual", y="Prediction", data=df)
     fig = plot.get_figure()
     fig.savefig(filepath)
+    fig.clf()
     return plot_img_path
 
 

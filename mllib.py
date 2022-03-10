@@ -18,7 +18,6 @@ models = [
 model_dict = {x.__class__.__name__: x for x in models}
 
 def get_model(model_name):
-    print(model_dict)
     return model_dict[model_name]
 
 

@@ -62,8 +62,8 @@
 
                             <div id="error" class="d-none card-body d-flex align-items-center justify-content-center error-card">
                                 <div class="text-center w-75">
-                                    <h5>Sorry! Something went wrong</h5>
-                                    <p>Please try again later, you can restart the process by using back button
+                                    <h5 id="error_head">Sorry! Something went wrong</h5>
+                                    <p id="error_detail">Please try again later, you can restart the process by using back button
                                         Otherwise try to upload another dataset.</p>
                                     <div class="d-flex justify-content-center pt-3">
                                         <button onclick="deleteFile('{{ fileid }}')"
@@ -190,7 +190,9 @@
                     $('#processing').addClass('d-none');
                     $('#result').removeClass('d-none');
                 },
-                error: function(){
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#error_head').text(errorThrown);
+                    $('#error_detail').text(jqXHR.responseJSON.message);
                     $('#processing').addClass('d-none');
                     $('#error').removeClass('d-none');
                 }
