@@ -4,11 +4,10 @@ import pickle
 
 import pandas as pd
 import numpy as np
-from sklearn import metrics, tree
+from sklearn import metrics
 from mllib import ML_lib, get_model, model_dict, scaler
 from keras.layers import Dense, Dropout, LSTM
 from datetime import datetime
-import seaborn as sns
 import matplotlib.pyplot as plt
 
 def allowed_ext(ds_type=None):
@@ -34,13 +33,13 @@ def available_models():
 def get_plot_image(df, model_name):
     df = df.apply(pd.to_numeric)
     filepath = os.path.join(static_dir, plot_img_path)
-    if 'LSTM' in model_name:
-        plot = plt.figure()
-        plt.plot(df['Actual'], 'b', label="Original Price")
-        plt.plot(df['Prediction'], 'r', label="Predicted Price")
+    # if 'LSTM' in model_name:
+    plot = plt.figure()
+    plt.plot(df['Actual'], 'b', label="Original Price")
+    plt.plot(df['Prediction'], 'r', label="Predicted Price")
     # elif ''
-    else:
-        plot = sns.regplot(x="Actual", y="Prediction", data=df)
+    # else:
+        # plot = sns.regplot(x="Actual", y="Prediction", data=df)
         # sns.scatterplot(x="Actual", y="Prediction", data=df)
     fig = plot.get_figure()
     fig.savefig(filepath)

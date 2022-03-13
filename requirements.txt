@@ -5,6 +5,5 @@ xgboost
 keras
 sklearn
 matplotlib
-seaborn
 openpyxl
 xlrd
