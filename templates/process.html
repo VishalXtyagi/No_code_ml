@@ -5,7 +5,7 @@
 {% block content %}
     <section class="min-vh-100 d-flex align-items-center section-image overlay-soft-dark"
              data-background="{{ url_for('static', filename='img/form-image.jpg') }}">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row justify-content-center">
                 <div class="col-lg-3 d-flex align-items-center justify-content-center">
                     {% if df is not none %}
@@ -120,12 +120,27 @@
                     {% if df is not none %}
                         <div class="card shadow w-100 p-3 h-100">
                             <div class="card-body">
-                                <label class="mb-3" for="select-col">Select the target variable
+                                <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="check-ind">
+                                <label class="form-check-label mb-3" for="check-ind">
+                                    Want to select index col?
+                                </label>
+                                </div>
+                                <div id="ind-div" class="d-none">
+                                <label class="mb-3" for="select-ind">Select the index column
                                     :</label>
-                                <select class="form-select mb-3" id="select-col" name="index" required>
+                                <select class="form-select mb-3" id="select-ind" name="index" required>
                                     <option disabled value="" hidden selected>Choose a option</option>
                                 </select>
-                                <label class="pt-3 mb-3 border-top" for="select-model">Select the ML model
+                                </div>
+                                <hr>
+                                <label class="mb-3" for="select-col">Select the target column
+                                    :</label>
+                                <select class="form-select mb-3" id="select-col" name="target" required>
+                                    <option disabled value="" hidden selected>Choose a option</option>
+                                </select>
+                                <hr>
+                                <label class="pt-3 mb-3" for="select-model">Select the ML model
                                     :</label>
                                 <select class="form-select mb-3" id="select-model" name="ml-model" required>
                                     <option disabled value="" hidden selected>Choose a option</option>
@@ -176,6 +191,7 @@
                 type: 'POST',
                 url: "{{ url_for('process') }}",
                 data: JSON.stringify({
+                    'index': $('#select-ind').val(),
                     'drop_columns': dropColumns,
                     'target': $('#select-col').val(),
                     'model_name': $('#select-model').val()
@@ -209,7 +225,7 @@
                 $.each(data, function (i, item) {
                     $('#select-model').append($('<option>', {
                         value: item,
-                        text: item.split(/(?=[A-Z])/).join(" ")
+                        text: item.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
                     }));
                 });
             }).fail(function () {
@@ -219,11 +235,31 @@
         }
 
         function updateIndexes() {
+            $('#select-ind').find('option').not(':first').remove();
+
+            var columnIDs = $("#df-column input:checkbox:checked").map(function () {
+                return $(this).val();
+            }).get();
+
+            $.each(columnIDs, function (i, item) {
+                $('#select-ind').append($('<option>', {
+                    value: item,
+                    text: item
+                }));
+            });
+        }
+
+        function updateTargets() {
             $('#select-col').find('option').not(':first').remove();
 
             var columnIDs = $("#df-column input:checkbox:checked").map(function () {
                 return $(this).val();
             }).get();
+
+            var indVal = $('#select-ind').val();
+            columnIDs = $.grep(columnIDs, function(value) {
+                return value != indVal;
+            });
 
             $.each(columnIDs, function (i, item) {
                 $('#select-col').append($('<option>', {
@@ -236,10 +272,22 @@
         $(function () {
             updateModels();
             updateIndexes();
-            $("#df-column input:checkbox").click(function (event) {
+            updateTargets();
+            $("#df-column input:checkbox").change(function (event) {
                 updateIndexes();
+                updateTargets();
             });
 
+            $("#check-ind").click(function () {
+                if (!$(this).is(':checked')) {
+                    $('#select-ind').val("").trigger("change");
+                }
+                $("#ind-div").toggleClass("d-none");
+            })
+
+            $("#select-ind").change(function (event) {
+                updateTargets();
+            });
 
             $('#proceedBtn').click(function (event) {
                 startProcess();

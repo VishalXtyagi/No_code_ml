@@ -1,25 +1,33 @@
-import numpy as np
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split as tts
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
-import sklearn as sk
+from keras.models import Sequential
 import xgboost as xg
 import pandas as pd
+import numpy as np
 
 models = [
     LinearRegression(),
     DecisionTreeRegressor(),
     RandomForestRegressor(),
-    xg.XGBRegressor(objective ='reg:linear', n_estimators = 10, seed = 123),
-    xg.XGBClassifier(n_estimators=10, seed=123)
+    xg.XGBRegressor(objective='reg:linear', n_estimators=10, seed=123),
+    xg.XGBClassifier(n_estimators=10, seed=123),
+    Sequential()
 ]
-model_dict = {x.__class__.__name__: x for x in models}
+
+model_dict = dict()
+scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+
+for model in models:
+    model_name = model.__class__.__name__
+    if model_name == "Sequential":
+        model_name = "LSTM"
+    model_dict[model_name] = model
 
 def get_model(model_name):
     return model_dict[model_name]
-
 
 class ML_lib:
 
@@ -40,5 +48,19 @@ class ML_lib:
             self.affect = pd.get_dummies(self.affect, columns=dummy_cols)
         return self.affect
 
-    def train_test_split(self):
+    def train_test_split(self, is_random=True):
+        if not is_random:
+            data_training = pd.DataFrame(self.target[0:int(len(self.target) * 0.70)])
+            data_testing = pd.DataFrame(self.target[int(len(self.target) * 0.70): int(len(self.target))])
+            data_training_array = scaler.fit_transform(data_training)
+            x_train, y_train, x_test, y_test = [], [], [], []
+            for i in range(100, data_training_array.shape[0]):
+                x_train.append(data_training_array[i - 100: i])
+                y_train.append(data_training_array[i, 0])
+            data_testing = pd.concat([data_training.tail(100), data_testing], ignore_index=True)
+            data_testing_array = scaler.fit_transform(data_testing)
+            for i in range(100, data_testing_array.shape[0]):
+                x_test.append(data_testing_array[i - 100:i])
+                y_test.append(data_testing_array[i, 0])
+            return np.array(x_train), np.array(x_test), np.array(y_train), np.array(y_test)
         return tts(self.affect, self.target, test_size=0.20, random_state=2)

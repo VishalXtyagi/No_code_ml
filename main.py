@@ -1,11 +1,13 @@
 import os
 
-from flask import Flask, render_template, request, abort, jsonify, url_for, send_from_directory
+from flask import Flask, render_template, request, abort, jsonify, url_for
 from nocode import Nocode, get_plot_image, available_models, save_model_to_file
 import shutil
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12).hex()
+is_random = True
+file_type = None
 
 for d in ('static/models', 'static/plots'):
     if os.path.exists(d):
@@ -30,7 +32,9 @@ def home():
 
 @app.route('/process', methods=['GET', 'POST'])
 def process():
+    global is_random, file_type
     if request.method == "POST":
+        index = request.json['index']
         drop_columns = request.json['drop_columns']
         target = request.json['target']
         model_name = request.json['model_name']
@@ -38,12 +42,16 @@ def process():
             nocode.drop_cols(drop_columns)
         if target and model_name:
             try:
-                nocode.reset_index()
+                nocode.reset_index(index)
                 nocode.cleaning_data()
-                model, test_df = nocode.predict_by_model(model_name, nocode.split_data(target), target)
+                if model_name == "LSTM":
+                    is_random = False
+                    file_type = 'h5'
+                split_data = nocode.split_data(target, is_random)
+                model, test_df = nocode.predict_by_model(model_name, split_data, target)
                 mae, mse, rmse = nocode.error_metric(test_df['Actual'], test_df['Prediction'])
-                plot_path = get_plot_image(test_df)
-                model_path = save_model_to_file(model)
+                plot_path = get_plot_image(test_df, model_name)
+                model_path = save_model_to_file(model, file_type)
                 return jsonify({
                     'mae': mae,
                     'mse': mse,

@@ -4,11 +4,12 @@ import pickle
 
 import pandas as pd
 import numpy as np
-from sklearn import metrics
-from mllib import ML_lib, get_model, model_dict
+from sklearn import metrics, tree
+from mllib import ML_lib, get_model, model_dict, scaler
+from keras.layers import Dense, Dropout, LSTM
 from datetime import datetime
 import seaborn as sns
-
+import matplotlib.pyplot as plt
 
 def allowed_ext(ds_type=None):
     ds_dict = {'csv': ['csv'], 'excel': ['xls', 'xlsx']}
@@ -30,11 +31,17 @@ def available_models():
     return list(model_dict.keys())
 
 
-def get_plot_image(df):
+def get_plot_image(df, model_name):
     df = df.apply(pd.to_numeric)
     filepath = os.path.join(static_dir, plot_img_path)
-    plot = sns.regplot(x="Actual", y="Prediction", data=df)
-    # sns.scatterplot(x="Actual", y="Prediction", data=df)
+    if 'LSTM' in model_name:
+        plot = plt.figure()
+        plt.plot(df['Actual'], 'b', label="Original Price")
+        plt.plot(df['Prediction'], 'r', label="Predicted Price")
+    # elif ''
+    else:
+        plot = sns.regplot(x="Actual", y="Prediction", data=df)
+        # sns.scatterplot(x="Actual", y="Prediction", data=df)
     fig = plot.get_figure()
     fig.savefig(filepath)
     fig.clf()
@@ -84,7 +91,7 @@ class Nocode:
 
     def reset_index(self, column=None):
         if column:
-            self.dataframe.set_index(column)
+            self.dataframe.set_index(column, inplace=True)
         else:
             self.dataframe = self.dataframe.reset_index()
         if 'index' in self.dataframe.columns:
@@ -92,7 +99,6 @@ class Nocode:
         return self.dataframe
 
     def cleaning_data(self):
-        print(self.dataframe)
         self.dataframe = self.dataframe.replace('?', np.NaN)
         for col in self.dataframe.columns:
             null_sum = self.dataframe[col].isnull().sum()
@@ -104,20 +110,40 @@ class Nocode:
                 self.dataframe[col] = self.dataframe[col].replace(np.NaN, mode)
         return self.dataframe
 
-    def split_data(self, target):
+    def split_data(self, target, is_random):
         ml = ML_lib(self.dataframe, target)
         ml.pre_processing()
-        return ml.train_test_split()
+        return ml.train_test_split(is_random)
 
     def predict_by_model(self, model_name, split_tnt_data, target):
         x_train, x_test, y_train, y_test = split_tnt_data
         model = get_model(model_name)
-        model.fit(x_train, y_train)
-        pred = model.predict(x_test)
+        if model_name == "LSTM":
+            model.add(LSTM(units=50, activation='relu', return_sequences=True, input_shape=(x_train.shape[1], 1)))
+            model.add(Dropout(0.2))
+            model.add(LSTM(units=60, activation='relu', return_sequences=True))
+            model.add(Dropout(0.3))
+            model.add(LSTM(units=80, activation='relu', return_sequences=True))
+            model.add(Dropout(0.4))
+            model.add(LSTM(units=120, activation='relu'))
+            model.add(Dropout(0.5))
+            model.add(Dense(units=1))
+            model.compile(optimizer='adam', loss='mean_squared_error')
+            model.fit(x_train, y_train, epochs=50)
+            pred = model.predict(x_test)
+            pred = scaler.inverse_transform(pred)
+            y_test = scaler.inverse_transform([y_test])
+        else:
+            model.fit(x_train, y_train)
+            pred = model.predict(x_test)
         pred = pd.DataFrame(pred)
         test_df = pd.DataFrame()
-        test_df["Actual"] = y_test.reset_index()[target]
-        test_df["Prediction"] = pred.reset_index()[0]
+        try:
+            test_df["Actual"] = y_test.reset_index()[target]
+            test_df["Prediction"] = pred.reset_index()[0]
+        except:
+            test_df["Actual"] = y_test[0]
+            test_df["Prediction"] = pred[0]
         return model, test_df
 
     def error_metric(self, y_test, pred):
