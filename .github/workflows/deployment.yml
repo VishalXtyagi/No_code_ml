@@ -12,10 +12,10 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@v2
 
-      - name: Setup Node.js
+      - name: Setup Python
         uses: actions/setup-python@v1
         with:
-          python-version: "3.10.2"
+          python-version: "3.8.10"
 
       - name: Install dependencies
         run: |
