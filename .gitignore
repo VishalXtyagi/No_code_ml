@@ -1,3 +1,4 @@
 static/models
 static/plots
 venv/
+__pycache__/
